@@ -1,81 +1,62 @@
 package fp.dam.psp.globos;
 
-import java.util.ArrayList;
+import java.util.concurrent.*;
 import java.util.Random;
 
-public class Deposito extends HiloPausable {
-
-    private final ArrayList<Globo> deshinchados = new ArrayList<>();
-    private final ArrayList<Globo> hinchando = new ArrayList<>();
+public class Deposito extends Thread {
+    private final BlockingQueue<Globo> deshinchados;
+    private final BlockingQueue<Globo> hinchando;
     private final int maxGlobos;
     private final int maxH;
     private final Consola consola;
     private int total = 0;
-    private int explotados = 0;
-    private int pinchados = 0;
+    private final Random r = new Random();
 
     public Deposito(int maxGlobos, int maxH, Consola consola) {
         super("REPONEDOR");
         this.maxGlobos = maxGlobos;
         this.maxH = maxH;
         this.consola = consola;
+
+        this.deshinchados = new LinkedBlockingQueue<>(maxGlobos);
+        this.hinchando = new LinkedBlockingQueue<>(maxH);
     }
 
-    public synchronized void reponer() {
-        while (deshinchados.size() + hinchando.size() == maxGlobos) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return;
-            }
+    public void reponer() {
+        try {
+            Globo globo = new Globo(++total, 5, consola);
+            deshinchados.put(globo);
+            consola.actualizarTotalGlobos(total, deshinchados.size(), hinchando.size());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
-        Globo globo = new Globo(++total, 5, consola);
-        deshinchados.add(globo);
-        consola.actualizarTotalGlobos(total, deshinchados.size(), hinchando.size());
-        notifyAll();
     }
 
-    public synchronized Globo getDeshinchado() {
-        while (deshinchados.isEmpty() || hinchando.size() == maxH) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return null;
-            }
+    public Globo getDeshinchado() {
+        try {
+            Globo globo = deshinchados.take();
+            globo.setHinchando();
+            hinchando.put(globo);
+            consola.println(globo.getNombre() + " ENTREGADO A " + Thread.currentThread().getName());
+            consola.actualizarGlobosDepositados(deshinchados.size(), hinchando.size());
+            return globo;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
         }
-        Globo globo = deshinchados.removeFirst();
-        globo.setHinchando();
-        hinchando.add(globo);
-        consola.println(globo.getNombre() + " ENTREGADO A " + Thread.currentThread().getName());
-        consola.actualizarGlobosDepositados(deshinchados.size(), hinchando.size());
-        notifyAll();
-        return globo;
     }
 
-    public synchronized void retirar(Globo globo) {
+    public void retirar(Globo globo) {
         hinchando.remove(globo);
-        notifyAll();
     }
 
-    private final Random r = new Random();
-    public synchronized Globo getHinchando() {
-        while (hinchando.isEmpty()) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return null;
-            }
+    public Globo getHinchando() {
+        try {
+            return hinchando.take();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
         }
-        Globo globo = hinchando.get(r.nextInt(hinchando.size()));
-        notifyAll();
-        return globo;
     }
 
-    @Override
-    protected void tarea() {
-        reponer();
-    }
 }

@@ -43,8 +43,6 @@ public class Consola extends JPanel {
         c.fill = GridBagConstraints.VERTICAL;
         l.setConstraints(sp, c);
         add(sp);
-//        DefaultCaret caret = (DefaultCaret) text.getCaret();
-//        caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
         JPanel panel = new JPanel(new GridLayout(12, 1));
         panel.setBackground(Color.white);
         panel.setBorder(BorderFactory.createCompoundBorder(

@@ -11,19 +11,23 @@ import java.util.Objects;
 public class Main extends JFrame implements WindowListener {
 
     private final Consola consola;
+
     private final ArrayList<HiloPausable> hilos = new ArrayList<>();
 
     Main() {
-        super ("GLOBOS");
+
+        super("GLOBOS");
         setResizable(false);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         addWindowListener(this);
+
         ((JPanel) getContentPane()).setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createEmptyBorder(10, 10, 10,10),
+                BorderFactory.createEmptyBorder(10, 10, 10, 10),
                 BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(Color.gray, 2),
+                        BorderFactory.createLineBorder(Color.GRAY, 2),
                         BorderFactory.createEmptyBorder(10, 10, 10, 10)
                 )));
+
         getContentPane().add(new ToolBar(), BorderLayout.NORTH);
         getContentPane().add(consola = new Consola(40, 50), BorderLayout.CENTER);
         pack();
@@ -36,23 +40,27 @@ public class Main extends JFrame implements WindowListener {
 
     private void iniciar() {
         setVisible(true);
-        Deposito deposito = new Deposito(10,3, consola);
-        hilos.add(deposito);
+
+        Deposito deposito = new Deposito(10, 3, consola);
         hilos.add(new PinchaGlobos(1, deposito));
-        for (int i=1; i<=5; i++)
+        for (int i = 1; i <= 5; i++) {
             hilos.add(new HinchaGlobos(i, deposito));
+        }
+
         hilos.forEach(Thread::start);
     }
 
     private void finalizar(ActionEvent e) {
+
         hilos.forEach(Thread::interrupt);
         hilos.forEach(t -> {
             try {
                 t.join();
             } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
+                Thread.currentThread().interrupt();
             }
         });
+
         dispose();
         System.exit(0);
     }
@@ -63,7 +71,6 @@ public class Main extends JFrame implements WindowListener {
 
     @Override
     public void windowOpened(WindowEvent e) {
-
     }
 
     @Override
@@ -73,27 +80,22 @@ public class Main extends JFrame implements WindowListener {
 
     @Override
     public void windowClosed(WindowEvent e) {
-
     }
 
     @Override
     public void windowIconified(WindowEvent e) {
-
     }
 
     @Override
     public void windowDeiconified(WindowEvent e) {
-
     }
 
     @Override
     public void windowActivated(WindowEvent e) {
-
     }
 
     @Override
     public void windowDeactivated(WindowEvent e) {
-
     }
 
     private class ToolBar extends JToolBar {
@@ -102,7 +104,8 @@ public class Main extends JFrame implements WindowListener {
             setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
             add(new BotonPausa(
                     new ImageIcon(Objects.requireNonNull(Main.class.getResource("/pause.png"))),
-                    new ImageIcon(Objects.requireNonNull(Main.class.getResource("/play.png")))));
+                    new ImageIcon(Objects.requireNonNull(Main.class.getResource("/play.png")))
+            ));
             JButton exit = new JButton(new ImageIcon(Objects.requireNonNull(Main.class.getResource("/exit.png"))));
             exit.addActionListener(Main.this::finalizar);
             add(exit);
@@ -110,8 +113,8 @@ public class Main extends JFrame implements WindowListener {
     }
 
     private class BotonPausa extends JToggleButton {
-        ImageIcon iconoPausa;
-        ImageIcon iconoReanudar;
+        private final ImageIcon iconoPausa;
+        private final ImageIcon iconoReanudar;
 
         BotonPausa(ImageIcon iconoPausa, ImageIcon iconoReanudar) {
             setIcon(this.iconoPausa = iconoPausa);
@@ -119,13 +122,10 @@ public class Main extends JFrame implements WindowListener {
             addActionListener(this::pausarReanudar);
         }
 
-        public void pausarReanudar(ActionEvent e) {
-            if (isSelected())
-                setIcon(iconoReanudar);
-            else
-                setIcon(iconoPausa);
+        private void pausarReanudar(ActionEvent e) {
+
+            setIcon(isSelected() ? iconoReanudar : iconoPausa);
             pausaOnOff();
         }
     }
-
 }

@@ -1,13 +1,16 @@
 package fp.dam.psp.globos;
-import static fp.dam.psp.globos.EstadoGlobo.*;
+
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Globo {
 
-    private EstadoGlobo estado = DESHINCHADO;
-    private int volMax;
+    private final Lock lock = new ReentrantLock();
+    private EstadoGlobo estado = EstadoGlobo.DESHINCHADO;
+    private final int volMax;
     private int volumen;
-    private Consola consola;
-    private String nombre;
+    private final Consola consola;
+    private final String nombre;
 
     public Globo(int id, int volMax, Consola consola) {
         nombre = "GLOBO " + id;
@@ -23,25 +26,40 @@ public class Globo {
         return estado;
     }
 
-    public synchronized void hinchar() {
-        volumen++;
-        if (volumen > volMax) {
-            estado = EXPLOTADO;
-            consola.println(nombre + " " + estado);
-            consola.actualizarGlobosExplotados();
+    public void hinchar() {
+        lock.lock();
+        try {
+            volumen++;
+            if (volumen > volMax) {
+                estado = EstadoGlobo.EXPLOTADO;
+                consola.println(nombre + " " + estado);
+                consola.actualizarGlobosExplotados();
+            } else {
+                consola.println(nombre + " " + estado + " " + volumen);
+            }
+        } finally {
+            lock.unlock();
         }
-        else
-            consola.println(nombre + " " + estado + " " + volumen);
     }
 
-    public synchronized void pinchar() {
-        volumen = 0;
-        estado = PINCHADO;
-        consola.println(nombre + " " + estado + " POR " + Thread.currentThread().getName());
-        consola.actualizarGlobosPinchados();
+    public void pinchar() {
+        lock.lock();
+        try {
+            volumen = 0;
+            estado = EstadoGlobo.PINCHADO;
+            consola.println(nombre + " " + estado + " POR " + Thread.currentThread().getName());
+            consola.actualizarGlobosPinchados();
+        } finally {
+            lock.unlock();
+        }
     }
 
     public void setHinchando() {
-        estado = HINCHANDO;
+        lock.lock();
+        try {
+            estado = EstadoGlobo.HINCHANDO;
+        } finally {
+            lock.unlock();
+        }
     }
 }
